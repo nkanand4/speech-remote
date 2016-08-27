@@ -106,11 +106,14 @@
             console.log('No one handles this action');
             return undefined;
         }else {
-            return executor.action(executor);
+            return executor.action ? executor.action(executor) : (function (doer) {
+                console.log('Doer does not do specified action', doer);
+            }(executor));
         }
     }
     var commands = {
         execute: function (text) {
+            console.log('Executing', text);
             return parseAndExecute(text);
         },
         addService: function (service) {
