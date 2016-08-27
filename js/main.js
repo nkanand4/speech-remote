@@ -16,7 +16,7 @@
             catchCallback('webkit speech recoginition not found');
         } else {
             recognition = new webkitSpeechRecognition();
-            recognition.continuous = true;
+            recognition.continuous = false;
             recognition.interimResults = false;
             recognition.onerror = function(event) {
                 console.log('Error listening');
@@ -27,7 +27,7 @@
                 var interim_transcript = '';
                 for (var i = event.resultIndex; i < event.results.length; ++i) {
                     if (event.results[i].isFinal) {
-                        final_transcript += event.results[i][0].transcript;
+                        final_transcript = event.results[i][0].transcript;
                         callback(final_transcript);
                         final_transcript = '';
                     }
@@ -54,8 +54,68 @@
     };
 }());
 
-function doStuff(text) {
-    console.log(text);
-}
+(function () {
+    var ready = false, timer;
 
-ASR.initialize().then(doStuff);
+    function readyToAcceptCommand() {
+        ready = true;
+        if(timer) {
+            clearTimeout(timer);
+        }
+        timer = setTimeout(function () {
+            ready = false;
+            $('#uhoh').get(0).play();
+            console.log('Going back for hot keyword detection');
+        }, 5 * 1000);
+        console.log('Giving you 15 seconds to speak command');
+    }
+
+    function doStuff(text) {
+        if(/gorgeous/i.test(text) && !ready) {
+            $('#yes').get(0).play();
+            if(!Commands.execute(text)) {
+                readyToAcceptCommand();
+                console.log('Play, I am ready to listen for next 15 seconds');
+            }
+        }
+        else if(ready) {
+            console.log('I am supposed to :: ', text);
+            Commands.execute(text);
+            readyToAcceptCommand();
+        }else {
+            console.log('ignoring', text);
+        }
+    }
+
+    ASR.initialize().then(doStuff);
+}());
+(function () {
+    var services = [];
+    function parseAndExecute(text) {
+        var handlerFound = false;
+        var executor;
+        $(services).each(function (i, service) {
+            var command = service.parse(text);
+            if(!handlerFound && command) {
+                // found handler
+                executor = command;
+                handlerFound = true;
+            }
+        });
+        if(!handlerFound) {
+            console.log('No one handles this action');
+            return undefined;
+        }else {
+            return executor.action(executor);
+        }
+    }
+    var commands = {
+        execute: function (text) {
+            return parseAndExecute(text);
+        },
+        addService: function (service) {
+            services.push(service);
+        }
+    };
+    window.Commands = commands;
+}());
