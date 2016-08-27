@@ -71,7 +71,7 @@
     }
 
     function doStuff(text) {
-        if(/gorgeous/i.test(text) && !ready) {
+        if(/Dumbledore/i.test(text) && !ready) {
             $('#yes').get(0).play();
             if(!Commands.execute(text)) {
                 readyToAcceptCommand();
@@ -106,7 +106,10 @@
             console.log('No one handles this action');
             return undefined;
         }else {
-            return executor.action ? executor.action(executor) : (function (doer) {
+            return executor.action ? (function (doer) {
+                doer.action(doer);
+                $('#affirmative').get(0).play();
+            }(executor)) : (function (doer) {
                 console.log('Doer does not do specified action', doer);
             }(executor));
         }
