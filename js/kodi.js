@@ -10,12 +10,12 @@
     var apis = {
         parse: function (text) {
             var response;
-            if(/kodi|movie|xbmc/g.test(text)) {
+            if(/kodi|movie|xbmc/ig.test(text)) {
                 response = {};
                 response.original = text;
                 if(/play|pause|hold/i.test(text)) {
                     response.action = apis.play;
-                }else if(/rewind|back/ig) {
+                }else if(/rewind|back/ig.test(text)) {
                     response.action = function (command) {
                         var matchTimings = command.original.match(/[0-9]+\s[a-z]+/ig);
                         var rewindBy = 0, hours = 0, minutes = 0, seconds = 0;
@@ -36,8 +36,34 @@
                         });
                         apis.rewind(rewindBy);
                     }
-                }else if(/jump|seek/ig) {
+                }else if(/jump|seek/ig.test(text)) {
 
+                }else if(/stop/ig.test(text)) {
+                    response.action = apis.stop;
+                }else if(/home/ig.test(text)) {
+                    response.action = apis.home;
+                }else if(/select/i.test(text)) {
+                    response.action = function () {
+                        apis.input('Select');
+                    };
+                }else if(/navigate/i.test(text)) {
+                    if(/\sdown/i.test(text)) {
+                        response.action = function () {
+                            apis.input('Down');
+                        };
+                    }else if(/\sup/i.test(text)) {
+                        response.action = function () {
+                            apis.input('Up');
+                        };
+                    }else if(/\sright|write/ig.test(text)) {
+                        response.action = function () {
+                            apis.input('Right');
+                        };
+                    }else if(/\sleft/i.test(text)) {
+                        response.action = function () {
+                            apis.input('Left');
+                        };
+                    }
                 }
             }
             return response;
@@ -48,6 +74,19 @@
         },
         rewind: function (duration) {
             console.log('rewind by', duration);
+            return true;
+        },
+        stop: function () {
+            $.getScript('http://localhost:12480/xbmc/perform/%7B%22api%22%3A%22Player.Stop%22%7D');
+            return true;
+        },
+        home: function () {
+            $.getScript('http://localhost:12480/xbmc/perform/%7B%22api%22%3A%22Input.Home%22%7D');
+            return true;
+        },
+        input: function (action) {
+            $.getScript('http://localhost:12480/xbmc/perform/%7B%22api%22%3A%22Input.'+action+'%22%7D');
+            return true;
         }
     };
     Commands.addService(apis);
